@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCR Pipeline — Setup Guide</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+  .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.07); }
+  .glow { box-shadow: 0 0 60px rgba(124, 58, 237, 0.15); }
+  .step-line::before { content: ''; position: absolute; left: 23px; top: 48px; bottom: -12px; width: 2px; background: linear-gradient(to bottom, rgba(124,58,237,0.5), transparent); }
+  .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.08); }
+  .fade-in { animation: fadeIn 0.6s ease forwards; opacity: 0; }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .tree-line { color: #4b5563; }
+</style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<!-- Hero -->
+<div class="relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-gray-950 to-indigo-950/30"></div>
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-3xl"></div>
+  
+  <div class="relative max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
+    <div class="inline-flex items-center gap-2 bg-violet-500/10 text-violet-300 text-sm px-4 py-1.5 rounded-full mb-6 border border-violet-500/20">
+      <span class="w-2 h-2 bg-violet-400 rounded-full animate-pulse"></span>
+      Docker Compose Project
+    </div>
+    <h1 class="text-5xl md:text-6xl font-extrabold mb-4">
+      <span class="bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">OCR Pipeline</span>
+    </h1>
+    <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
+      Watch a folder for images → Extract text with Ollama OCR → Classify with Groq AI → Organize into Markdown files → Access anywhere on your network.
+    </p>
+    <div class="flex flex-wrap gap-3 justify-center">
+      <span class="px-3 py-1.5 rounded-lg bg-gray-800 text-sm text-gray-300 border border-gray-700">🐍 Python</span>
+      <span class="px-3 py-1.5 rounded-lg bg-gray-800 text-sm text-gray-300 border border-gray-700">🐳 Docker</span>
+      <span class="px-3 py-1.5 rounded-lg bg-gray-800 text-sm text-gray-300 border border-gray-700">🦙 Ollama</span>
+      <span class="px-3 py-1.5 rounded-lg bg-gray-800 text-sm text-gray-300 border border-gray-700">⚡ Groq</span>
+      <span class="px-3 py-1.5 rounded-lg bg-gray-800 text-sm text-gray-300 border border-gray-700">🌐 Flask</span>
+    </div>
+  </div>
+</div>
+
+<main class="max-w-4xl mx-auto px-6 pb-20">
+
+  <!-- Architecture -->
+  <section class="mb-16 fade-in" style="animation-delay: 0.1s">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">🏗️ Architecture</h2>
+    <div class="glass rounded-2xl p-6 glow">
+      <div class="grid md:grid-cols-4 gap-4 text-center">
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div class="text-3xl mb-2">📂</div>
+          <div class="font-semibold text-amber-300">Watch Folder</div>
+          <div class="text-xs text-gray-500 mt-1">Drop images here</div>
+        </div>
+        <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+          <div class="text-3xl mb-2">🦙</div>
+          <div class="font-semibold text-blue-300">Ollama OCR</div>
+          <div class="text-xs text-gray-500 mt-1">glm-ocr:q8_0</div>
+        </div>
+        <div class="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+          <div class="text-3xl mb-2">⚡</div>
+          <div class="font-semibold text-green-300">Groq Classify</div>
+          <div class="text-xs text-gray-500 mt-1">LLaMA 3.3 70B</div>
+        </div>
+        <div class="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+          <div class="text-3xl mb-2">📝</div>
+          <div class="font-semibold text-violet-300">Markdown Files</div>
+          <div class="text-xs text-gray-500 mt-1">5 categories</div>
+        </div>
+      </div>
+      <div class="mt-4 flex justify-center">
+        <div class="flex items-center gap-2 text-gray-500 text-sm">
+          <span>Image</span>
+          <span>→</span>
+          <span>OCR Text</span>
+          <span>→</span>
+          <span>Category</span>
+          <span>→</span>
+          <span class="text-violet-400">*.md</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- File Structure -->
+  <section class="mb-16 fade-in" style="animation-delay: 0.2s">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">📁 Project Structure</h2>
+    <div class="code-block rounded-2xl p-6 mono text-sm">
+      <div class="text-gray-300">
+        <div><span class="tree-line">.</span></div>
+        <div><span class="tree-line">├── </span><span class="text-yellow-400">docker-compose.yml</span></div>
+        <div><span class="tree-line">├── </span><span class="text-yellow-400">Dockerfile</span></div>
+        <div><span class="tree-line">├── </span><span class="text-yellow-400">requirements.txt</span></div>
+        <div><span class="tree-line">├── </span><span class="text-yellow-400">.env</span> <span class="text-gray-600">← your secrets</span></div>
+        <div><span class="tree-line">├── </span><span class="text-blue-400">OCR/</span></div>
+        <div><span class="tree-line">│   ├── </span><span class="text-green-400">python_script.py</span></div>
+        <div><span class="tree-line">│   ├── </span><span class="text-purple-400">chemistry.md</span> <span class="text-gray-600">← auto-generated</span></div>
+        <div><span class="tree-line">│   ├── </span><span class="text-purple-400">religion.md</span></div>
+        <div><span class="tree-line">│   ├── </span><span class="text-purple-400">math.md</span></div>
+        <div><span class="tree-line">│   ├── </span><span class="text-purple-400">french.md</span></div>
+        <div><span class="tree-line">│   └── </span><span class="text-purple-400">other.md</span></div>
+        <div><span class="tree-line">└── </span><span class="text-blue-400">watch_folder/</span> <span class="text-gray-600">← drop images here</span></div>
+        <div><span class="tree-line">    ├── </span><span class="text-cyan-400">img001.jpeg</span></div>
+        <div><span class="tree-line">    ├── </span><span class="text-cyan-400">img002.jpeg</span></div>
+        <div><span class="tree-line">    └── </span><span class="text-cyan-400">img003.jpeg</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Setup Steps -->
+  <section class="mb-16 fade-in" style="animation-delay: 0.3s">
+    <h2 class="text-2xl font-bold mb-8 flex items-center gap-2">🚀 Quick Start</h2>
+    
+    <div class="space-y-8">
+      <!-- Step 1 -->
+      <div class="relative step-line">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center text-lg font-bold shrink-0">1</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold mb-2">Clone & Configure</h3>
+            <p class="text-gray-400 text-sm mb-3">Copy the environment template and add your Groq API key.</p>
+            <div class="code-block rounded-xl p-4 text-sm">
+              <code class="text-green-400">cp .env.example .env</code><br>
+              <code class="text-gray-500"># Edit .env and set your GROQ_API_KEY</code><br>
+              <code class="text-green-400">nano .env</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="relative step-line">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center text-lg font-bold shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold mb-2">Launch with Docker Compose</h3>
+            <p class="text-gray-400 text-sm mb-3">This starts Ollama, the OCR watcher, and auto-pulls the OCR model.</p>
+            <div class="code-block rounded-xl p-4 text-sm">
+              <code class="text-green-400">docker compose up -d</code>
+            </div>
+            <div class="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-300">
+              💡 <strong>GPU users:</strong> Uncomment the GPU section in <code class="text-amber-200">docker-compose.yml</code> for faster OCR.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="relative step-line">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center text-lg font-bold shrink-0">3</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold mb-2">Wait for Model Download</h3>
+            <p class="text-gray-400 text-sm mb-3">The <code class="bg-gray-800 px-1.5 py-0.5 rounded">ollama-pull</code> service will automatically download <code class="bg-gray-800 px-1.5 py-0.5 rounded">glm-ocr:q8_0</code>. Monitor progress:</p>
+            <div class="code-block rounded-xl p-4 text-sm">
+              <code class="text-green-400">docker compose logs -f ollama-pull</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="relative step-line">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center text-lg font-bold shrink-0">4</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold mb-2">Drop Images</h3>
+            <p class="text-gray-400 text-sm mb-3">Copy or move image files into the watch folder. The pipeline triggers automatically.</p>
+            <div class="code-block rounded-xl p-4 text-sm">
+              <code class="text-green-400">cp ~/my-notes/*.jpeg ./watch_folder/</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="relative">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-lg font-bold shrink-0">5</div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold mb-2">View Results</h3>
+            <p class="text-gray-400 text-sm mb-3">Open the web dashboard from any device on your network.</p>
+            <div class="code-block rounded-xl p-4 text-sm">
+              <code class="text-cyan-400">http://&lt;your-server-ip&gt;:8080</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="mb-16 fade-in" style="animation-delay: 0.4s">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">✨ Features</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="glass rounded-xl p-5">
+        <div class="text-xl mb-2">👁️ Smart File Watching</div>
+        <p class="text-gray-400 text-sm">Detects new images using filesystem events. Waits for uploads to complete before processing. Handles both <code class="bg-gray-800 px-1 rounded text-xs">create</code> and <code class="bg-gray-800 px-1 rounded text-xs">move</code> events.</p>
+      </div>
+      <div class="glass rounded-xl p-5">
+        <div class="text-xl mb-2">🔄 Duplicate Prevention</div>
+        <p class="text-gray-400 text-sm">Tracks processed files in a JSON manifest. Survives container restarts. Won't re-process images already handled.</p>
+      </div>
+      <div class="glass rounded-xl p-5">
+        <div class="text-xl mb-2">🌐 Network Dashboard</div>
+        <p class="text-gray-400 text-sm">Beautiful web UI accessible from any device. View rendered markdown or download raw files. Live activity log with auto-refresh.</p>
+      </div>
+      <div class="glass rounded-xl p-5">
+        <div class="text-xl mb-2">📊 5 Categories</div>
+        <p class="text-gray-400 text-sm">Chemistry 🧪 · Religion 🕊️ · Math 📐 · French 🇫🇷 · Other 📁 — Groq AI classifies each OCR result automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Endpoints -->
+  <section class="mb-16 fade-in" style="animation-delay: 0.5s">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">🔌 API Endpoints</h2>
+    <div class="glass rounded-2xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800 text-left">
+            <th class="px-5 py-3 text-gray-400 font-medium">Method</th>
+            <th class="px-5 py-3 text-gray-400 font-medium">Endpoint</th>
+            <th class="px-5 py-3 text-gray-400 font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800/50">
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3"><span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-xs font-mono">GET</span></td>
+            <td class="px-5 py-3 font-mono text-violet-300">/</td>
+            <td class="px-5 py-3 text-gray-400">Web dashboard</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3"><span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-xs font-mono">GET</span></td>
+            <td class="px-5 py-3 font-mono text-violet-300">/view/{category}</td>
+            <td class="px-5 py-3 text-gray-400">Rendered markdown view</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3"><span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-xs font-mono">GET</span></td>
+            <td class="px-5 py-3 font-mono text-violet-300">/raw/{category}</td>
+            <td class="px-5 py-3 text-gray-400">Download raw .md file</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3"><span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-xs font-mono">GET</span></td>
+            <td class="px-5 py-3 font-mono text-violet-300">/api/status</td>
+            <td class="px-5 py-3 text-gray-400">JSON status info</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3"><span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-xs font-mono">GET</span></td>
+            <td class="px-5 py-3 font-mono text-violet-300">/api/logs</td>
+            <td class="px-5 py-3 text-gray-400">JSON activity log</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Environment Variables -->
+  <section class="mb-16 fade-in" style="animation-delay: 0.6s">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">⚙️ Configuration</h2>
+    <div class="glass rounded-2xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800 text-left">
+            <th class="px-5 py-3 text-gray-400 font-medium">Variable</th>
+            <th class="px-5 py-3 text-gray-400 font-medium">Default</th>
+            <th class="px-5 py-3 text-gray-400 font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800/50">
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3 font-mono text-amber-300">GROQ_API_KEY</td>
+            <td class="px-5 py-3 text-gray-500">—</td>
+            <td class="px-5 py-3 text-gray-400">Required. Your Groq API key</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3 font-mono text-amber-300">GROQ_MODEL</td>
+            <td class="px-5 py-3 font-mono text-gray-500 text-xs">llama-3.3-70b-versatile</td>
+            <td class="px-5 py-3 text-gray-400">Groq model for classification</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3 font-mono text-amber-300">WEB_PORT</td>
+            <td class="px-5 py-3 font-mono text-gray-500">8080</td>
+            <td class="px-5 py-3 text-gray-400">Dashboard port</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3 font-mono text-amber-300">OLLAMA_URL</td>
+            <td class="px-5 py-3 font-mono text-gray-500 text-xs">http://ollama:11434</td>
+            <td class="px-5 py-3 text-gray-400">Ollama API endpoint</td>
+          </tr>
+          <tr class="hover:bg-white/[0.02]">
+            <td class="px-5 py-3 font-mono text-amber-300">UPLOAD_STABLE_SECONDS</td>
+            <td class="px-5 py-3 font-mono text-gray-500">3</td>
+            <td class="px-5 py-3 text-gray-400">Seconds to wait for file stability</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Troubleshooting -->
+  <section class="fade-in" style="animation-delay: 0.7s">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">🔧 Useful Commands</h2>
+    <div class="space-y-3">
+      <div class="code-block rounded-xl p-4 text-sm">
+        <div class="text-gray-500 mb-1"># View all logs</div>
+        <code class="text-green-400">docker compose logs -f</code>
+      </div>
+      <div class="code-block rounded-xl p-4 text-sm">
+        <div class="text-gray-500 mb-1"># Restart just the watcher</div>
+        <code class="text-green-400">docker compose restart ocr-watcher</code>
+      </div>
+      <div class="code-block rounded-xl p-4 text-sm">
+        <div class="text-gray-500 mb-1"># Pull a different model</div>
+        <code class="text-green-400">docker compose exec ollama ollama pull glm-ocr:q8_0</code>
+      </div>
+      <div class="code-block rounded-xl p-4 text-sm">
+        <div class="text-gray-500 mb-1"># Check Ollama models</div>
+        <code class="text-green-400">docker compose exec ollama ollama list</code>
+      </div>
+      <div class="code-block rounded-xl p-4 text-sm">
+        <div class="text-gray-500 mb-1"># Stop everything</div>
+        <code class="text-green-400">docker compose down</code>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-gray-800 py-8 text-center text-sm text-gray-600">
+  OCR Pipeline · Built with Python, Flask, Ollama, and Groq
+</footer>
+
+<script>
+// Animate elements on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = 'running';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
