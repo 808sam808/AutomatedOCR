@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.example
+*.md
+!OCR/*.md
+__pycache__
+*.pyc
+.DS_Store
+index.html
+README.md
+watch_folder/*
+!watch_folder/.gitkeep
